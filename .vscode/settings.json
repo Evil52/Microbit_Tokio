@@ -1,23 +1,10 @@
 {
-    "rust-analyzer.cargo.allTargets": false,
-    "rust-analyzer.linkedProjects": [
-        "shared/Cargo.toml",
-        "web/Cargo.toml",
-        "firmware/Cargo.toml"
-    ],
-    "rust-analyzer.cargo.target": null,
-
-    // НЕ добавлять --all-features в Run/Debug codelens: на firmware это
-    // тянет host-only фичи и ломает сборку под thumbv7em.
+    // НЕ добавлять --all-features в Run/Debug codelens (host-only фичи ломают thumbv7em).
     "rust-analyzer.cargo.features": [],
     "rust-analyzer.runnables.extraArgs": [],
     "rust-analyzer.runnables.extraTestBinaryArgs": [],
-
-    // firmware кросс-компилируется → для него запускай задачу
-    // "firmware: flash & run" (Cmd+Shift+B), а НЕ codelens "Run" над main:
-    // codelens идёт из корня воркспейса без per-crate target и падает на
-    // nrf52833-pac (invalid Mach-O section). Задача запускается из firmware/.
     "rust-analyzer.check.allTargets": false,
+
     "MicroPython.executeButton": [
         {
             "text": "▶",

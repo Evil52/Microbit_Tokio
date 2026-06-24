@@ -1,0 +1,25 @@
+{
+    // Multi-root: разводим rust-analyzer по таргетам.
+    // Открой через File -> Open Workspace from File... -> этот файл.
+    "folders": [
+        {
+            "name": "firmware (thumbv7em)",
+            "path": "firmware"
+        },
+        {
+            "name": "host (shared + web)",
+            "path": "."
+        }
+    ],
+    "settings": {
+        // Корень host-проекта анализирует только shared и web (firmware
+        // исключаем, чтобы его не пытались собрать под macOS).
+        "rust-analyzer.linkedProjects": [
+            "shared/Cargo.toml",
+            "web/Cargo.toml"
+        ],
+        "rust-analyzer.check.allTargets": false,
+        "rust-analyzer.cargo.features": [],
+        "rust-analyzer.runnables.extraArgs": []
+    }
+}

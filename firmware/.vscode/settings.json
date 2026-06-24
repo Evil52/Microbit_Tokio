@@ -1,0 +1,9 @@
+{
+    // Настройки rust-analyzer для firmware-корня (multi-root workspace).
+    // target берётся из firmware/.cargo/config.toml (thumbv7em-none-eabihf),
+    // поэтому здесь его НЕ дублируем — только включаем то, что нужно no_std-крейту.
+    "rust-analyzer.cargo.buildScripts.enable": true,
+    "rust-analyzer.procMacro.enable": true,
+    "rust-analyzer.check.allTargets": false,
+    "rust-analyzer.cargo.allTargets": false
+}

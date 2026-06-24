@@ -1,4 +1,6 @@
 use embassy_nrf::gpio::{Input, Level, Output, OutputDrive, Pull};
+use embassy_nrf::peripherals::{P0_08, P0_16, P1_08, TEMP, TWISPI0, UARTE0};
+use embassy_nrf::Peri;
 use embassy_nrf::Peripherals;
 
 pub struct LedPins {
@@ -13,10 +15,28 @@ pub struct ButtonPins {
     pub b: Input<'static>,
 }
 
+/// Внутренняя I²C-шина (schematic «Target MCU», net I2C_INT).
+/// SCL=P0.08, SDA=P0.16, внешние pull-up 1кОм (R51/R52, schematic).
+pub struct I2cPins {
+    pub twim: Peri<'static, TWISPI0>,
+    pub scl: Peri<'static, P0_08>,
+    pub sda: Peri<'static, P0_16>,
+}
+
+/// UART к интерфейсному MCU (DAPLink CDC). Только TX: шлём телеметрию.
+/// TX = P1.08 (net UART_INT_TX, schematic). RX (P0.06) пока не используем.
+pub struct UartPins {
+    pub uarte: Peri<'static, UARTE0>,
+    pub tx: Peri<'static, P1_08>,
+}
+
 /// Вся плата после init: сгруппированные, уже сконфигурированные пины.
 pub struct Board {
     pub leds: LedPins,
     pub buttons: ButtonPins,
+    pub temp: Peri<'static, TEMP>,
+    pub i2c: I2cPins,
+    pub uart: UartPins,
 }
 
 /// Разложить «сырые» Peripherals в именованные группы пинов.
@@ -32,11 +52,11 @@ pub fn split(p: Peripherals) -> Board {
     ];
     // COL init High: столбец по умолчанию неактивен (active-low сток).
     let cols = [
-        Output::new(p.P0_28, Level::High, OutputDrive::Standard), // COL1
-        Output::new(p.P0_11, Level::High, OutputDrive::Standard), // COL2
-        Output::new(p.P0_31, Level::High, OutputDrive::Standard), // COL3
-        Output::new(p.P1_05, Level::High, OutputDrive::Standard), // COL4 (порт 1: P1.05, не P0.05!)
-        Output::new(p.P0_30, Level::High, OutputDrive::Standard), // COL5
+        Output::new(p.P0_28, Level::High, OutputDrive::Standard), // COL1 (P0.28/AIN4, schematic)
+        Output::new(p.P0_11, Level::High, OutputDrive::Standard), // COL2 (P0.11, schematic)
+        Output::new(p.P0_31, Level::High, OutputDrive::Standard), // COL3 = P0.31/AIN7 (schematic, sheet "Target MCU")
+        Output::new(p.P1_05, Level::High, OutputDrive::Standard), // COL4 = P1.05 (порт 1, не P0.05!)
+        Output::new(p.P0_30, Level::High, OutputDrive::Standard), // COL5 = P0.30/AIN6 (schematic, sheet "Target MCU")
     ];
 
     let buttons = ButtonPins {
@@ -47,5 +67,15 @@ pub fn split(p: Peripherals) -> Board {
     Board {
         leds: LedPins { rows, cols },
         buttons,
+        temp: p.TEMP,
+        i2c: I2cPins {
+            twim: p.TWISPI0,
+            scl: p.P0_08, // I2C_INT_SCL (schematic, TP20, R51 1k pull-up)
+            sda: p.P0_16, // I2C_INT_SDA (schematic, TP21, R52 1k pull-up)
+        },
+        uart: UartPins {
+            uarte: p.UARTE0,
+            tx: p.P1_08, // UART_INT_TX (schematic)
+        },
     }
 }

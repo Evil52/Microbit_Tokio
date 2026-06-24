@@ -15,8 +15,10 @@ embassy-nrf = { version = "0.11.0", features = [
     "nrf52833",       # target MCU (micro:bit V2.2.1 schematic p.3 "Target MCU")
     "time-driver-rtc1",
     "gpiote",
+    # NB: TWIM (I²C для LSM303AGR) в 0.11 НЕ за фичей — модуль twim доступен всегда.
 ] }
 embassy-time = { version = "0.5.1" }
+embassy-sync = { version = "0.8.0" } # Mutex для общего снимка телеметрии
 
 # critical-section-single-core: реализация critical-section через PRIMASK
 # (запрет прерываний на 1 ядре, Ch.5). Без неё линковка падает на

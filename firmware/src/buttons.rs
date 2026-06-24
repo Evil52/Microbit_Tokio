@@ -8,6 +8,8 @@
 
 use embassy_nrf::gpio::Input;
 
+use crate::state::STATE;
+
 /// Антидребезг: окно тишины после фиксации фронта (Making Embedded Systems Ch.6).
 const DEBOUNCE_MS: u64 = 20;
 
@@ -15,6 +17,12 @@ const DEBOUNCE_MS: u64 = 20;
 pub async fn button_a_task(mut btn: Input<'static>) {
     loop {
         btn.wait_for_falling_edge().await; // нажатие (High→Low)
+        {
+            // Один lock в скоупе: Mutex не reentrant, держать его во время
+            // debounce-сна не нужно — отпускаем сразу после инкремента.
+            let mut s = STATE.lock().await;
+            s.btn_a = s.btn_a.wrapping_add(1);
+        }
         defmt::info!("BTN_A pressed");
         embassy_time::Timer::after_millis(DEBOUNCE_MS).await; // глушим дребезг нажатия
         btn.wait_for_high().await; // дождаться отпускания, чтобы не ловить дребезг отпускания
@@ -25,6 +33,10 @@ pub async fn button_a_task(mut btn: Input<'static>) {
 pub async fn button_b_task(mut btn: Input<'static>) {
     loop {
         btn.wait_for_falling_edge().await;
+        {
+            let mut s = STATE.lock().await;
+            s.btn_b = s.btn_b.wrapping_add(1);
+        }
         defmt::info!("BTN_B pressed");
         embassy_time::Timer::after_millis(DEBOUNCE_MS).await;
         btn.wait_for_high().await;

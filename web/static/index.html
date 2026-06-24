@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>micro:bit telemetry</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background:#111; color:#eee; padding:2rem; }
+    h1 { font-weight: 600; }
+    .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; max-width:720px; }
+    .card { background:#1c1c22; border-radius:12px; padding:1.2rem; }
+    .card .label { font-size:.8rem; color:#888; text-transform:uppercase; letter-spacing:.05em; }
+    .card .value { font-size:2rem; font-weight:700; margin-top:.3rem; }
+    .axes { display:flex; gap:1rem; font-size:1.4rem; }
+    .axes div { flex:1; text-align:center; }
+    #status { margin-bottom:1rem; color:#6c6; }
+    #status.down { color:#c66; }
+  </style>
+</head>
+<body>
+  <h1>micro:bit telemetry</h1>
+  <div id="status">connecting…</div>
+  <div class="grid">
+    <div class="card">
+      <div class="label">SoC temp</div>
+      <div class="value"><span id="temp">–</span> °C</div>
+    </div>
+    <div class="card">
+      <div class="label">buttons</div>
+      <div class="value">A:<span id="ba">0</span> B:<span id="bb">0</span></div>
+    </div>
+    <div class="card">
+      <div class="label">accel (mg)</div>
+      <div class="value axes">
+        <div>x<br><span id="ax">0</span></div>
+        <div>y<br><span id="ay">0</span></div>
+        <div>z<br><span id="az">0</span></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const $ = id => document.getElementById(id);
+    const es = new EventSource('/events');
+    es.onopen = () => { $('status').textContent = 'live'; $('status').classList.remove('down'); };
+    es.onerror = () => { $('status').textContent = 'disconnected'; $('status').classList.add('down'); };
+    es.onmessage = e => {
+      const t = JSON.parse(e.data);
+      $('temp').textContent = t.temp_c.toFixed(1);
+      $('ax').textContent = t.accel_mg[0];
+      $('ay').textContent = t.accel_mg[1];
+      $('az').textContent = t.accel_mg[2];
+      $('ba').textContent = t.btn_a;
+      $('bb').textContent = t.btn_b;
+    };
+  </script>
+</body>
+</html>

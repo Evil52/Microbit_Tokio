@@ -8,6 +8,7 @@ license.workspace = true
 serde = { version = "1", default-features = false, features = ["derive"] }
 postcard = "1"
 crc = "3"
+cobs = { version = "0.3", default-features = false }
 
 [features]
 default = []

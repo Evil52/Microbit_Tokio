@@ -7,17 +7,16 @@ license.workspace = true
 [dependencies]
 shared = { path = "../shared" } # no_std, default features
 
-embassy-executor = { version = "0.6", features = [
-    "arch-cortex-m",
+embassy-executor = { version = "0.10.0", features = [
+    "platform-cortex-m", # было arch-cortex-m; в 0.10 фичи переименованы в platform-*
     "executor-thread",
-    "integrated-timers",
 ] }
-embassy-nrf = { version = "0.2", features = [
+embassy-nrf = { version = "0.11.0", features = [
     "nrf52833",       # target MCU (micro:bit V2.2.1 schematic p.3 "Target MCU")
     "time-driver-rtc1",
     "gpiote",
 ] }
-embassy-time = { version = "0.3" }
+embassy-time = { version = "0.5.1" }
 
 # critical-section-single-core: реализация critical-section через PRIMASK
 # (запрет прерываний на 1 ядре, Ch.5). Без неё линковка падает на
@@ -26,6 +25,6 @@ embassy-time = { version = "0.3" }
 # ломается на новом rustc (unknown register r0 / __basepri_r).
 cortex-m = { version = "0.7", features = ["critical-section-single-core"] }
 cortex-m-rt = "0.7"
-panic-probe = { version = "0.3", features = ["print-defmt"] }
-defmt = "0.3"
-defmt-rtt = "0.3"
+panic-probe = { version = "1.0.0", features = ["print-defmt"] }
+defmt = "1.1.0"
+defmt-rtt = "1.2.0"

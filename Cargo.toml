@@ -1,0 +1,20 @@
+[workspace]
+resolver = "2"
+members = ["shared", "firmware", "web"]
+
+# Общие метаданные — наследуются крейтами через `x.workspace = true`.
+# Трассируемость (Making Embedded Systems, Ch.2 "Version your code"):
+# одна версия на весь продукт.
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = ""
+
+# Профили читаются cargo ТОЛЬКО из корня воркспейса (в членах игнорируются).
+# release для firmware: оптимизация по размеру + debug-символы для defmt/probe-rs.
+[profile.release]
+opt-level = "s"      # size: nRF52833 = 512KB flash, экономим (Ch.11 "Doing More with Less")
+lto = "fat"
+codegen-units = 1
+debug = 2            # символы нужны probe-rs/defmt; во flash образа не попадают

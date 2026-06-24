@@ -1,0 +1,17 @@
+[package]
+name = "web"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+shared = { path = "../shared", features = ["std"] } # std-мир
+
+tokio = { version = "1", features = ["full"] }
+tokio-serial = "5"
+axum = "0.7"
+tower-http = { version = "0.6", features = ["fs"] } # отдать static/index.html
+serde_json = "1"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = "0.3"

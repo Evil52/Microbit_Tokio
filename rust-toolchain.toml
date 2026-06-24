@@ -1,0 +1,5 @@
+# Пин тулчейна = воспроизводимость сборки (IEC 62304 / ISO 26262 дисциплина).
+[toolchain]
+channel = "nightly"
+components = ["rust-src", "rustfmt", "clippy", "llvm-tools"]
+targets = ["thumbv7em-none-eabihf"]

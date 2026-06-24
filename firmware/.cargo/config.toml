@@ -1,0 +1,15 @@
+# Подхватывается ТОЛЬКО при сборке из firmware/ (cargo идёт вверх по дереву),
+# поэтому web/shared остаются хостовыми крейтами.
+[build]
+target = "thumbv7em-none-eabihf" # nRF52833 = Cortex-M4F (schematic p.3 "Target MCU")
+
+[target.thumbv7em-none-eabihf]
+# probe-rs видит этот chip (проверено: `probe-rs chip list` -> nRF52833_xxAA).
+runner = "probe-rs run --chip nRF52833_xxAA"
+rustflags = [
+    "-C", "link-arg=-Tlink.x",   # linker-скрипт от cortex-m-rt
+    "-C", "link-arg=-Tdefmt.x",  # секции для defmt
+]
+
+[env]
+DEFMT_LOG = "debug"

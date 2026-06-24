@@ -1,0 +1,18 @@
+[package]
+name = "shared"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde = { version = "1", default-features = false, features = ["derive"] }
+postcard = "1"
+crc = "3"
+
+[features]
+default = []
+# web включает shared/std; firmware использует no_std (default).
+std = ["serde/std"]
+
+[dev-dependencies]
+proptest = "1"

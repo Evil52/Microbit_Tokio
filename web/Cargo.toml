@@ -3,6 +3,7 @@ name = "web"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+default-run = "web"
 
 [dependencies]
 shared = { path = "../shared", features = ["std"] } # std-мир

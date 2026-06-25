@@ -118,19 +118,17 @@ jobs:
   # на github-hosted раннер (где платы нет).
   hil:
     name: HIL (hardware-in-the-loop)
-    needs: [build-firmware]
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_hil }}
     runs-on: [self-hosted, macOS, hil]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: firmware-elf
-          path: fw
-      - name: Flash firmware
+      - name: Build firmware (release) and smoke tool
         run: |
-          probe-rs download --chip nRF52833_xxAA fw/firmware
+          (cd firmware && cargo build --release)
+          cargo build -p web --bin hil_smoke
+      - name: Flash + reset + smoke
+        run: |
+          probe-rs download --chip nRF52833_xxAA target/thumbv7em-none-eabihf/release/firmware
           probe-rs reset --chip nRF52833_xxAA
-          sleep 2
-      - name: Smoke test (decode valid telemetry frames)
-        run: cargo run -p web --bin hil_smoke -- /dev/cu.usbmodem312102
+          sleep 3
+          ./target/debug/hil_smoke /dev/cu.usbmodem312102

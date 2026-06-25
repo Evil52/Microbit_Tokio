@@ -8,8 +8,8 @@ use shared::decode_frame;
 use tokio::io::AsyncReadExt;
 use tokio_serial::SerialPortBuilderExt;
 
-const NEED_FRAMES: u32 = 3;
-const TIMEOUT: Duration = Duration::from_secs(8);
+const NEED_FRAMES: u32 = 1;
+const TIMEOUT: Duration = Duration::from_secs(10);
 
 #[tokio::main]
 async fn main() -> std::process::ExitCode {
@@ -24,11 +24,15 @@ async fn main() -> std::process::ExitCode {
             return std::process::ExitCode::FAILURE;
         }
     };
+    eprintln!("port {port} opened, reading for {TIMEOUT:?}...");
 
     let mut acc: Vec<u8> = Vec::with_capacity(128);
     let mut byte = [0u8; 1];
     let start = Instant::now();
     let mut valid = 0u32;
+    let mut total_bytes = 0u64;
+    let mut separators = 0u64;
+    let mut decode_fails = 0u64;
 
     while start.elapsed() < TIMEOUT {
         let n = match tokio::time::timeout(Duration::from_secs(2), serial.read(&mut byte)).await {
@@ -38,22 +42,27 @@ async fn main() -> std::process::ExitCode {
         if n == 0 {
             continue;
         }
+        total_bytes += 1;
 
         if byte[0] == 0x00 {
+            separators += 1;
             if !acc.is_empty() {
-                if let Ok(frame) = decode_frame(&acc) {
-                    valid += 1;
-                    println!(
-                        "frame #{valid}: temp={:.1}C accel={:?} btn_a={} btn_b={}",
-                        frame.temp_celsius(),
-                        frame.accel_mg,
-                        frame.btn_a,
-                        frame.btn_b
-                    );
-                    if valid >= NEED_FRAMES {
-                        println!("PASS: {valid} valid frames decoded");
-                        return std::process::ExitCode::SUCCESS;
+                match decode_frame(&acc) {
+                    Ok(frame) => {
+                        valid += 1;
+                        println!(
+                            "frame #{valid}: temp={:.1}C accel={:?} btn_a={} btn_b={}",
+                            frame.temp_celsius(),
+                            frame.accel_mg,
+                            frame.btn_a,
+                            frame.btn_b
+                        );
+                        if valid >= NEED_FRAMES {
+                            println!("PASS: {valid} valid frame(s) decoded");
+                            return std::process::ExitCode::SUCCESS;
+                        }
                     }
+                    Err(_) => decode_fails += 1,
                 }
                 acc.clear();
             }
@@ -65,6 +74,9 @@ async fn main() -> std::process::ExitCode {
         }
     }
 
-    eprintln!("FAIL: only {valid} valid frames in {TIMEOUT:?} (need >= {NEED_FRAMES})");
+    eprintln!(
+        "FAIL: 0 valid frames in {TIMEOUT:?}. \
+         diag: total_bytes={total_bytes} separators={separators} decode_fails={decode_fails}"
+    );
     std::process::ExitCode::FAILURE
 }

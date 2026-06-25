@@ -127,8 +127,10 @@ jobs:
         with:
           name: firmware-elf
           path: fw
-      - name: Flash + smoke test
+      - name: Flash firmware
         run: |
           probe-rs download --chip nRF52833_xxAA fw/firmware
           probe-rs reset --chip nRF52833_xxAA
-          # TODO: прочитать UART /dev/cu.usbmodem*, проверить валидные COBS-кадры
+          sleep 2
+      - name: Smoke test (decode valid telemetry frames)
+        run: cargo run -p web --bin hil_smoke -- /dev/cu.usbmodem312102

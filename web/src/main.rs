@@ -14,7 +14,6 @@ use web_server::{router, AppState};
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
 
-    // Порт CDC: из аргумента или env. На macOS использовать cu.* (tty.* блокирует open).
     let port = std::env::args()
         .nth(1)
         .or_else(|| std::env::var("MICROBIT_PORT").ok())
@@ -23,7 +22,6 @@ async fn main() -> anyhow::Result<()> {
     let (tx, _rx) = broadcast::channel(16);
     let gate = FlashGate::new();
 
-    // Фоновый ридер серийника (устойчив к flash/обрыву — переоткрывает порт).
     {
         let tx = tx.clone();
         let port = port.clone();

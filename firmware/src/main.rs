@@ -1,8 +1,8 @@
 #![no_std]
 #![no_main]
 
-use defmt_rtt as _; // defmt поверх RTT
-use panic_probe as _; // panic-обработчик с defmt-выводом
+use defmt_rtt as _;
+use panic_probe as _;
 
 mod board;
 mod buttons;
@@ -20,17 +20,16 @@ use embassy_nrf::{
 
 bind_interrupts!(struct Irqs{
     TEMP => temp::InterruptHandler;
-    TWISPI0 => twim::InterruptHandler<TWISPI0>; // I²C для LSM303AGR
-    UARTE0 => uarte::InterruptHandler<UARTE0>; // UART к DAPLink CDC
+    TWISPI0 => twim::InterruptHandler<TWISPI0>;
+    UARTE0 => uarte::InterruptHandler<UARTE0>;
 });
 
 #[embassy_executor::main]
 async fn main(spawner: embassy_executor::Spawner) {
     let mut config = Config::default();
-    config.hfclk_source = HfclkSource::ExternalXtal; // HFXO 64MHz от 32MHz кристалла (§5.4.1.1 p.80; schematic p.3 X1)
-    config.lfclk_source = LfclkSource::InternalRC; // LFRC: нет LFXO на micro:bit (§5.4.2 p.81)
+    config.hfclk_source = HfclkSource::ExternalXtal;
+    config.lfclk_source = LfclkSource::InternalRC;
 
-    // init() настраивает в т.ч. прерывание GPIOTE для async-фронтов кнопок.
     let p = embassy_nrf::init(config);
     let board = board::split(p);
 

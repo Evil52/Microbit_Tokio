@@ -33,20 +33,17 @@ pub fn encode_frame<'a>(
     t: &Telemetry,
     out: &'a mut [u8; MAX_FRAME],
 ) -> Result<&'a [u8], postcard::Error> {
-    // 1. data = version | postcard(payload) во временный буфер.
     let mut data = [0u8; MAX_FRAME];
     data[0] = PROTOCOL_VERSION;
     let payload = postcard::to_slice(t, &mut data[1..])?;
     let payload_len = payload.len();
     let data_len = 1 + payload_len;
 
-    // 2. CRC16 по version+payload, дописываем LE.
     let crc = CRC16.checksum(&data[..data_len]);
     data[data_len] = (crc & 0xff) as u8;
     data[data_len + 1] = (crc >> 8) as u8;
     let framed_len = data_len + 2;
 
-    // 3. COBS-кодируем весь блок в out.
     let n = cobs::encode(&data[..framed_len], out);
     Ok(&out[..n])
 }
@@ -56,16 +53,14 @@ pub fn decode_frame(frame: &[u8]) -> Result<Telemetry, DecodeError> {
     let mut buf = [0u8; MAX_FRAME];
     let n = cobs::decode(frame, &mut buf).map_err(|_| DecodeError::Cobs)?;
     if n < 3 {
-        return Err(DecodeError::TooShort); // минимум version(1)+crc(2)
+        return Err(DecodeError::TooShort);
     }
     let data = &buf[..n];
 
-    // version
     if data[0] != PROTOCOL_VERSION {
         return Err(DecodeError::Version(data[0]));
     }
 
-    // CRC: последние 2 байта LE, считаем по остальному.
     let crc_pos = n - 2;
     let got = u16::from_le_bytes([data[crc_pos], data[crc_pos + 1]]);
     let want = CRC16.checksum(&data[..crc_pos]);
@@ -73,7 +68,6 @@ pub fn decode_frame(frame: &[u8]) -> Result<Telemetry, DecodeError> {
         return Err(DecodeError::Crc);
     }
 
-    // payload: между version и crc.
     postcard::from_bytes(&data[1..crc_pos]).map_err(|_| DecodeError::Payload)
 }
 
@@ -83,7 +77,7 @@ mod tests {
 
     fn sample() -> Telemetry {
         Telemetry {
-            temp_q4: 112, // 28.0°C
+            temp_q4: 112,
             accel_mg: [12, -34, 1000],
             btn_a: 5,
             btn_b: 2,
@@ -110,8 +104,8 @@ mod tests {
         let mut out = [0u8; MAX_FRAME];
         let frame = encode_frame(&t, &mut out).unwrap();
         let mut bad = frame.to_vec();
-        bad[1] ^= 0xff; // ломаем байт
-                        // не должно успешно декодироваться в исходный кадр.
+        bad[1] ^= 0xff;
+
         assert!(decode_frame(&bad).map(|x| x != t).unwrap_or(true));
     }
 
@@ -121,14 +115,12 @@ mod tests {
         let mut out = [0u8; MAX_FRAME];
         let frame = encode_frame(&t, &mut out).unwrap();
 
-        // Распакуем, подменим version, пересоберём COBS.
         let mut raw = [0u8; MAX_FRAME];
         let n = cobs::decode(frame, &mut raw).unwrap();
         raw[0] = 99;
         let mut reenc = [0u8; MAX_FRAME];
         let m = cobs::encode(&raw[..n], &mut reenc);
 
-        // version ловится раньше crc; при подмене version crc тоже не сойдётся.
         assert!(matches!(
             decode_frame(&reenc[..m]),
             Err(DecodeError::Version(99)) | Err(DecodeError::Crc)

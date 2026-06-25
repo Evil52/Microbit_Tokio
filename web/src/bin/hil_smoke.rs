@@ -31,7 +31,6 @@ async fn main() -> std::process::ExitCode {
     let mut valid = 0u32;
 
     while start.elapsed() < TIMEOUT {
-        // read с таймаутом, чтобы не зависнуть, если поток замолчал.
         let n = match tokio::time::timeout(Duration::from_secs(2), serial.read(&mut byte)).await {
             Ok(Ok(n)) => n,
             _ => continue,
@@ -61,7 +60,7 @@ async fn main() -> std::process::ExitCode {
         } else {
             acc.push(byte[0]);
             if acc.len() > 128 {
-                acc.clear(); // resync на мусоре
+                acc.clear();
             }
         }
     }

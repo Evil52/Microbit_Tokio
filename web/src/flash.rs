@@ -15,7 +15,7 @@ const CHIP: &str = "nRF52833_xxAA";
 #[derive(Clone)]
 pub struct FlashGate {
     pub flashing: Arc<AtomicBool>,
-    pub resume: Arc<Notify>, // будит serial-ридер после flash
+    pub resume: Arc<Notify>,
 }
 
 impl FlashGate {
@@ -30,13 +30,13 @@ impl FlashGate {
 /// Прошить плату. Ставит флаг (serial закроет порт), запускает probe-rs, снимает флаг.
 pub async fn flash(gate: &FlashGate) -> Result<String, String> {
     gate.flashing.store(true, Ordering::SeqCst);
-    // дать serial-ридеру время заметить флаг и закрыть порт
+
     tokio::time::sleep(std::time::Duration::from_millis(300)).await;
 
     let result = run_probe_rs().await;
 
     gate.flashing.store(false, Ordering::SeqCst);
-    gate.resume.notify_waiters(); // разбудить serial-ридер
+    gate.resume.notify_waiters();
 
     result
 }

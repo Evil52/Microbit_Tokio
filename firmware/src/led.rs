@@ -10,18 +10,17 @@ pub async fn display_task(pins: LedPins) {
 
     loop {
         for r in 0..5 {
-            // Выставляем столбцы текущей строки до подачи питания на строку.
             for c in 0..5 {
                 if frame[r][c] {
-                    cols[c].set_low(); // active-low: зажечь
+                    cols[c].set_low();
                 } else {
-                    cols[c].set_high(); // погасить
+                    cols[c].set_high();
                 }
             }
 
-            rows[r].set_high(); // active-high: подать питание на строку
+            rows[r].set_high();
             embassy_time::Timer::after_millis(2).await;
-            rows[r].set_low(); // снять питание перед следующей строкой
+            rows[r].set_low();
         }
     }
 }

@@ -45,26 +45,25 @@ pub struct Board {
 /// Разложить «сырые» Peripherals в именованные группы пинов.
 /// Конкретные имена пинов (P0_xx / P1_xx) фигурируют ТОЛЬКО здесь.
 pub fn split(p: Peripherals) -> Board {
-    // ROW init Low: строка по умолчанию неактивна (active-high источник).
     let rows = [
-        Output::new(p.P0_21, Level::Low, OutputDrive::Standard), // ROW1
-        Output::new(p.P0_22, Level::Low, OutputDrive::Standard), // ROW2
-        Output::new(p.P0_15, Level::Low, OutputDrive::Standard), // ROW3
-        Output::new(p.P0_24, Level::Low, OutputDrive::Standard), // ROW4
-        Output::new(p.P0_19, Level::Low, OutputDrive::Standard), // ROW5
+        Output::new(p.P0_21, Level::Low, OutputDrive::Standard),
+        Output::new(p.P0_22, Level::Low, OutputDrive::Standard),
+        Output::new(p.P0_15, Level::Low, OutputDrive::Standard),
+        Output::new(p.P0_24, Level::Low, OutputDrive::Standard),
+        Output::new(p.P0_19, Level::Low, OutputDrive::Standard),
     ];
-    // COL init High: столбец по умолчанию неактивен (active-low сток).
+
     let cols = [
-        Output::new(p.P0_28, Level::High, OutputDrive::Standard), // COL1 (P0.28/AIN4, schematic)
-        Output::new(p.P0_11, Level::High, OutputDrive::Standard), // COL2 (P0.11, schematic)
-        Output::new(p.P0_31, Level::High, OutputDrive::Standard), // COL3 = P0.31/AIN7 (schematic, sheet "Target MCU")
-        Output::new(p.P1_05, Level::High, OutputDrive::Standard), // COL4 = P1.05 (порт 1, не P0.05!)
-        Output::new(p.P0_30, Level::High, OutputDrive::Standard), // COL5 = P0.30/AIN6 (schematic, sheet "Target MCU")
+        Output::new(p.P0_28, Level::High, OutputDrive::Standard),
+        Output::new(p.P0_11, Level::High, OutputDrive::Standard),
+        Output::new(p.P0_31, Level::High, OutputDrive::Standard),
+        Output::new(p.P1_05, Level::High, OutputDrive::Standard),
+        Output::new(p.P0_30, Level::High, OutputDrive::Standard),
     ];
 
     let buttons = ButtonPins {
-        a: Input::new(p.P0_14, Pull::Up), // BTN_A
-        b: Input::new(p.P0_23, Pull::Up), // BTN_B
+        a: Input::new(p.P0_14, Pull::Up),
+        b: Input::new(p.P0_23, Pull::Up),
     };
 
     Board {
@@ -73,12 +72,12 @@ pub fn split(p: Peripherals) -> Board {
         temp: p.TEMP,
         i2c: I2cPins {
             twim: p.TWISPI0,
-            scl: p.P0_08, // I2C_INT_SCL (schematic, TP20, R51 1k pull-up)
-            sda: p.P0_16, // I2C_INT_SDA (schematic, TP21, R52 1k pull-up)
+            scl: p.P0_08,
+            sda: p.P0_16,
         },
         uart: UartPins {
             uarte: p.UARTE0,
-            tx: p.P0_06, // наш TX = nRF TXD = P0.06 (nrf-rs BSP; = interface RX/UART_INT_RX)
+            tx: p.P0_06,
         },
     }
 }

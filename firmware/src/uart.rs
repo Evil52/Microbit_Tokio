@@ -10,26 +10,23 @@ use shared::{encode_frame, MAX_FRAME};
 use crate::state::STATE;
 use crate::Irqs;
 
-const PERIOD_MS: u64 = 200; // 5 кадров/с
+const PERIOD_MS: u64 = 200;
 
 #[embassy_executor::task]
 pub async fn uart_task(uarte: Peri<'static, UARTE0>, tx: Peri<'static, P0_06>) {
-    let config = Config::default(); // 115200 8N1 — стандарт DAPLink CDC
+    let config = Config::default();
     let mut tx = UarteTx::new(uarte, Irqs, tx, config);
 
-    // out: COBS-тело + разделитель 0x00, всё в RAM (UARTE EasyDMA не читает flash!).
     let mut out = [0u8; MAX_FRAME + 1];
     loop {
-        // Снимок состояния: копируем под мьютексом и сразу отпускаем.
         let snapshot = { *STATE.lock().await };
 
         let mut frame_buf = [0u8; MAX_FRAME];
         if let Ok(frame) = encode_frame(&snapshot, &mut frame_buf) {
             let len = frame.len();
             out[..len].copy_from_slice(frame);
-            out[len] = 0x00; // разделитель кадра
-                             // Шлём одним write из RAM (out на стеке): литерал &[0x00] дал бы
-                             // BufferNotInRAM — EasyDMA не умеет читать flash.
+            out[len] = 0x00;
+
             if let Err(e) = tx.write(&out[..len + 1]).await {
                 defmt::error!("UART write error: {:?}", defmt::Debug2Format(&e));
             }

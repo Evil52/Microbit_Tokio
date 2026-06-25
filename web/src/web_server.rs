@@ -48,7 +48,7 @@ async fn events(
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
     let rx = state.tx.subscribe();
     let stream = BroadcastStream::new(rx).filter_map(|res| {
-        let t = res.ok()?; // пропускаем lagged-ошибки broadcast
+        let t = res.ok()?;
         let payload = json!({
             "temp_c": t.temp_celsius(),
             "accel_mg": t.accel_mg,

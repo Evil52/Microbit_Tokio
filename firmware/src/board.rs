@@ -1,5 +1,5 @@
 use embassy_nrf::gpio::{Input, Level, Output, OutputDrive, Pull};
-use embassy_nrf::peripherals::{P0_08, P0_16, P1_08, TEMP, TWISPI0, UARTE0};
+use embassy_nrf::peripherals::{P0_06, P0_08, P0_16, TEMP, TWISPI0, UARTE0};
 use embassy_nrf::Peri;
 use embassy_nrf::Peripherals;
 
@@ -24,10 +24,13 @@ pub struct I2cPins {
 }
 
 /// UART к интерфейсному MCU (DAPLink CDC). Только TX: шлём телеметрию.
-/// TX = P1.08 (net UART_INT_TX, schematic). RX (P0.06) пока не используем.
+/// Наш TX (nRF TXD) = **P0.06** — по эталонному nrf-rs/microbit BSP.
+/// ВНИМАНИЕ: имена нетов на схеме (UART_INT_TX=P1.08, UART_INT_RX=P0.06)
+/// заданы с точки зрения ИНТЕРФЕЙСНОГО MCU: его RX (UART_INT_RX, P0.06) =
+/// наш TX. Поэтому шлём на P0.06, RX интерфейса = P1.08 (нам не нужен).
 pub struct UartPins {
     pub uarte: Peri<'static, UARTE0>,
-    pub tx: Peri<'static, P1_08>,
+    pub tx: Peri<'static, P0_06>,
 }
 
 /// Вся плата после init: сгруппированные, уже сконфигурированные пины.
@@ -75,7 +78,7 @@ pub fn split(p: Peripherals) -> Board {
         },
         uart: UartPins {
             uarte: p.UARTE0,
-            tx: p.P1_08, // UART_INT_TX (schematic)
+            tx: p.P0_06, // наш TX = nRF TXD = P0.06 (nrf-rs BSP; = interface RX/UART_INT_RX)
         },
     }
 }

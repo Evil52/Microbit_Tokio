@@ -37,6 +37,12 @@
       </div>
     </div>
   </div>
+
+  <div style="margin-top:1.5rem;">
+    <button id="flashBtn" style="background:#2a5;color:#fff;border:none;border-radius:8px;padding:.7rem 1.4rem;font-size:1rem;cursor:pointer;">⚡ Flash firmware</button>
+    <span id="flashStatus" style="margin-left:1rem;color:#888;"></span>
+  </div>
+
   <script>
     const $ = id => document.getElementById(id);
     const es = new EventSource('/events');
@@ -50,6 +56,20 @@
       $('az').textContent = t.accel_mg[2];
       $('ba').textContent = t.btn_a;
       $('bb').textContent = t.btn_b;
+    };
+
+    $('flashBtn').onclick = async () => {
+      const btn = $('flashBtn'), st = $('flashStatus');
+      btn.disabled = true; st.textContent = 'flashing…'; st.style.color = '#cc6';
+      try {
+        const r = await fetch('/flash', { method: 'POST' });
+        const txt = await r.text();
+        st.textContent = (r.ok ? '✓ ' : '✗ ') + txt;
+        st.style.color = r.ok ? '#6c6' : '#c66';
+      } catch (e) {
+        st.textContent = '✗ ' + e; st.style.color = '#c66';
+      }
+      btn.disabled = false;
     };
   </script>
 </body>

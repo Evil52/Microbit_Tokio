@@ -62,15 +62,17 @@ jobs:
       - run: cargo clippy
         working-directory: firmware
 
-  # ── Гейт 4: тесты (shared, host/std) ────────────────────────────
+  # ── Гейт 4: тесты host-крейтов (shared + web, std) ──────────────
+  # web-тесты не требуют железа (фрейминг/gate/JSON — чистая логика);
+  # игнорируемые тесты (реальный probe-rs) сюда не попадают.
   test:
-    name: test (shared)
+    name: test (shared + web)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@nightly
       - uses: Swatinem/rust-cache@v2
-      - run: cargo test -p shared
+      - run: cargo test -p shared -p web
 
   # ── Гейт 5: проверка no_std-сборки shared под thumbv7em ─────────
   # Гарантирует, что общий контракт реально собирается для embedded.

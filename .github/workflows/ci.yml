@@ -4,6 +4,14 @@ on:
   push:
     branches: [main, master]
   pull_request:
+  # Ручной запуск с опцией HIL: гоняется только когда есть self-hosted
+  # runner с подключённой платой (метка [self-hosted, macOS, hil]).
+  workflow_dispatch:
+    inputs:
+      run_hil:
+        description: "Запустить HIL (нужен self-hosted runner с платой)"
+        type: boolean
+        default: false
 
 # Отменяем устаревшие прогоны при новом пуше в ту же ветку.
 concurrency:
@@ -103,11 +111,15 @@ jobs:
       - uses: EmbarkStudios/cargo-deny-action@v2
 
   # ── Гейт 8 (опц.): HIL на self-hosted ARM64 runner ──────────────
-  # Включить, когда есть раннер с меткой [self-hosted, macOS, hil] и платой.
+  # Запускается ТОЛЬКО при ручном workflow_dispatch с галкой run_hil=true.
+  # Это честнее, чем if:false: job не висит вечным "skipped" в каждом push,
+  # а выполняется реально, когда ты сознательно жмёшь Run с подключённой платой.
+  # Метка runner'а [self-hosted, macOS, hil] гарантирует, что job не уйдёт
+  # на github-hosted раннер (где платы нет).
   hil:
     name: HIL (hardware-in-the-loop)
     needs: [build-firmware]
-    if: false # ВКЛЮЧИТЬ когда настроишь self-hosted runner с подключённой платой
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_hil }}
     runs-on: [self-hosted, macOS, hil]
     steps:
       - uses: actions/checkout@v4

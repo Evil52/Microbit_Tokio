@@ -1,0 +1,122 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+# Отменяем устаревшие прогоны при новом пуше в ту же ветку.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings" # варнинги = ошибки в CI (прод-дисциплина)
+
+jobs:
+  # ── Гейт 1: формат ──────────────────────────────────────────────
+  fmt:
+    name: rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt
+      - run: cargo fmt --all --check
+
+  # ── Гейт 2: clippy host-крейтов (shared + web) ──────────────────
+  clippy-host:
+    name: clippy (shared + web)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy -p shared -p web --all-targets
+
+  # ── Гейт 3: clippy firmware (thumbv7em, из firmware/) ───────────
+  # БЕЗ --all-targets: no_std-крейт не имеет test-таргета (E0463 can't find `test`).
+  # Запуск из firmware/ — там .cargo/config.toml ставит target (из корня = Mach-O err).
+  clippy-firmware:
+    name: clippy (firmware)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: clippy
+          targets: thumbv7em-none-eabihf
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy
+        working-directory: firmware
+
+  # ── Гейт 4: тесты (shared, host/std) ────────────────────────────
+  test:
+    name: test (shared)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test -p shared
+
+  # ── Гейт 5: проверка no_std-сборки shared под thumbv7em ─────────
+  # Гарантирует, что общий контракт реально собирается для embedded.
+  build-shared-embedded:
+    name: shared (no_std / thumbv7em)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          targets: thumbv7em-none-eabihf
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build -p shared --target thumbv7em-none-eabihf
+
+  # ── Гейт 6: сборка firmware (релизный ELF) ──────────────────────
+  build-firmware:
+    name: build firmware
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          targets: thumbv7em-none-eabihf
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --release
+        working-directory: firmware
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware-elf
+          path: target/thumbv7em-none-eabihf/release/firmware
+
+  # ── Гейт 7: cargo-deny (лицензии / уязвимости / баны) ───────────
+  deny:
+    name: cargo-deny
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v2
+
+  # ── Гейт 8 (опц.): HIL на self-hosted ARM64 runner ──────────────
+  # Включить, когда есть раннер с меткой [self-hosted, macOS, hil] и платой.
+  hil:
+    name: HIL (hardware-in-the-loop)
+    needs: [build-firmware]
+    if: false # ВКЛЮЧИТЬ когда настроишь self-hosted runner с подключённой платой
+    runs-on: [self-hosted, macOS, hil]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: firmware-elf
+          path: fw
+      - name: Flash + smoke test
+        run: |
+          probe-rs download --chip nRF52833_xxAA fw/firmware
+          probe-rs reset --chip nRF52833_xxAA
+          # TODO: прочитать UART /dev/cu.usbmodem*, проверить валидные COBS-кадры

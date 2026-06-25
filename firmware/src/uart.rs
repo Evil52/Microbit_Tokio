@@ -28,7 +28,8 @@ pub async fn uart_task(uarte: Peri<'static, UARTE0>, tx: Peri<'static, P0_06>) {
             let len = frame.len();
             out[..len].copy_from_slice(frame);
             out[len] = 0x00; // разделитель кадра
-            // Один write из RAM. Литерал &[0x00] дал бы BufferNotInRAM (flash).
+                             // Шлём одним write из RAM (out на стеке): литерал &[0x00] дал бы
+                             // BufferNotInRAM — EasyDMA не умеет читать flash.
             if let Err(e) = tx.write(&out[..len + 1]).await {
                 defmt::error!("UART write error: {:?}", defmt::Debug2Format(&e));
             }

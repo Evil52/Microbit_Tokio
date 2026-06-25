@@ -1,12 +1,22 @@
 # cargo-deny: гейт лицензий / уязвимостей / банов (CI, Фаза 6).
+
 [advisories]
 yanked = "deny"
+# Исключения для транзитивных advisory, которые мы не можем устранить:
+ignore = [
+    # proc-macro-error2 unmaintained — тянется через defmt-macros → defmt.
+    "RUSTSEC-2026-0173",
+    # atomic-polyfill unmaintained — транзитивно через heapless (postcard).
+    "RUSTSEC-2023-0089",
+    # bare-metal deprecated — транзитивно через cortex-m/embedded-стек.
+    "RUSTSEC-2026-0110",
+]
 
 [bans]
 multiple-versions = "warn"
 
 [licenses]
-# Подровняем под реальные транзитивные лицензии после первого прогона.
+# Разрешённые лицензии (выверены по реальным транзитивным зависимостям).
 allow = [
     "MIT",
     "Apache-2.0",
@@ -14,4 +24,7 @@ allow = [
     "BSD-3-Clause",
     "Unicode-3.0",
     "Zlib",
+    # MPL-2.0: serialport (через tokio-serial). File-level copyleft, OSI/FSF,
+    # допустимо как неизменяемая зависимость.
+    "MPL-2.0",
 ]

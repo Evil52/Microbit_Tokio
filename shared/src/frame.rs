@@ -111,7 +111,7 @@ mod tests {
         let frame = encode_frame(&t, &mut out).unwrap();
         let mut bad = frame.to_vec();
         bad[1] ^= 0xff; // ломаем байт
-        // не должно успешно декодироваться в исходный кадр.
+                        // не должно успешно декодироваться в исходный кадр.
         assert!(decode_frame(&bad).map(|x| x != t).unwrap_or(true));
     }
 
